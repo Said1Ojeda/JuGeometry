@@ -54,7 +54,9 @@ const Motor = (() => {
         const g = s.grav;
 
         if (s.modo === 'cubo') {
-            if (s.enSuelo && mantener) {
+            // si tocaste un poquito antes de caer tambien salta, si no se siente que no agarro el toque
+            if (s.enSuelo && (mantener || s.buffer > 0)) {
+                s.buffer = 0;
                 s.vy = g * SALTO;
                 s.enSuelo = false;
                 s.saltos++;
