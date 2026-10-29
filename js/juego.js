@@ -45,6 +45,9 @@
     let estela = [];
     let rot = 0;
     let acumulado = 0, ultimo = 0;
+    // posicion para dibujar, va entre el paso de fisica anterior y el actual
+    let antX = 0, antY = 0, verX = 0, verY = 0;
+    let pctHud = -1;
     let camMenu = 0;
     let W = 0, H = 0, E = 1;
 
@@ -74,6 +77,9 @@
         saltosAntes = s.saltos;
         estela = [];
         acumulado = 0;
+        antX = verX = s.x;
+        antY = verY = s.y;
+        pctHud = -1;
         muertoDesde = 0;
         ganadoDesde = 0;
 
@@ -202,15 +208,23 @@
         acumulado += dt;
         while (acumulado >= Motor.PASO) {
             acumulado -= Motor.PASO;
+            antX = s.x;
+            antY = s.y;
             Motor.paso(s, nivel, mantener, Motor.PASO);
             if (s.evento === 'moneda') {
                 Musica.efecto('moneda');
                 explotar(s.x + .5, s.y + .5, '#ffd84d', 18);
             }
             if (s.evento === 'orbe' || s.evento === 'pad' || s.evento === 'portal') explotar(s.x + .5, s.y + .5, '#ffffff', 10);
-            if (s.muerto) { morir(); return; }
-            if (s.ganado) { ganar(); return; }
+            if (s.muerto) { verX = s.x; verY = s.y; morir(); return; }
+            if (s.ganado) { verX = s.x; verY = s.y; ganar(); return; }
         }
+
+        // lo que sobro del tiempo se usa para dibujar entre dos pasos
+        // asi la camara avanza parejo aunque un cuadro haga 3 pasos y el otro 5
+        const t = acumulado / Motor.PASO;
+        verX = antX + (s.x - antX) * t;
+        verY = antY + (s.y - antY) * t;
 
         // giro del cubo, media vuelta por salto y se acomoda al caer
         if (s.modo === 'cubo') {
@@ -224,7 +238,7 @@
             rot = -Math.atan2(s.vy, Motor.BASE * s.mult) * 180 / Math.PI * .8;
         } else rot = s.vy > 0 ? -45 : 45;
 
-        estela.push({ x: s.x + .5, y: s.y + .5 });
+        estela.push({ x: verX + .5, y: verY + .5 });
         if (estela.length > 60) estela.shift();
 
         if (s.modo === 'cubo' && s.enSuelo && Math.random() < .5)
@@ -268,7 +282,7 @@
 
     function dibujar(dt) {
         const enJuego = pantalla !== 'menu' && s;
-        const px = enJuego ? s.x : camMenu;
+        const px = enJuego ? verX : camMenu;
         const cam = px - JUGADOR_X;
         const col = coloresEn(px);
         const lat = latido(px);
@@ -523,7 +537,7 @@
     }
 
     function dibujarJugador(cam) {
-        const x = sx(s.x + .5, cam), y = sy(s.y + .5);
+        const x = sx(verX + .5, cam), y = sy(verY + .5);
         const icono = datos.icono;
         const c1 = colorJugador(0), c2 = colorJugador(1);
 
@@ -661,10 +675,16 @@
 
     function actualizarHud() {
         if (!s || pantalla === 'menu') return;
+        // solo se toca la pagina cuando cambia el numero, tocarla cada cuadro tambien da tirones
         const pct = Math.min(100, Math.floor(100 * s.x / nivel.fin));
-        $('barra-relleno').style.width = pct + '%';
-        $('pct').textContent = pct + '%';
+        if (pct === pctHud) return;
+        pctHud = pct;
+        barraHud.style.width = pct + '%';
+        pctTexto.textContent = pct + '%';
     }
+
+    const barraHud = $('barra-relleno');
+    const pctTexto = $('pct');
 
     let avisoTimer = null;
     function aviso(texto) {
