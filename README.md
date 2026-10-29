@@ -63,17 +63,21 @@ Desde el botón 🎨 del menú escoges el color principal, el secundario y la ca
 
 ## Cómo está hecho
 
-JavaScript puro con `<canvas>`, sin librerías ni archivos de audio.
+TypeScript en modo estricto con `<canvas>`, sin librerías ni archivos de audio. El código se escribe en `src/` y se compila a `js/`, que es lo que carga la página.
 
 ```
-index.html       pantallas y estilos
-js/motor.js      física, choques y el armado de niveles
-js/niveles.js    los tres niveles, escritos por beats
-js/musica.js     la música, generada con Web Audio
-js/juego.js      dibujo, controles, menús y modo práctica
+index.html         pantallas y estilos
+src/tipos.d.ts     tipos del estado, los objetos del nivel y las canciones
+src/motor.ts       física, choques y el armado de niveles
+src/niveles.ts     los tres niveles, escritos por beats
+src/musica.ts      la música, generada con Web Audio
+src/juego.ts       dibujo, controles, menús y modo práctica
+js/                lo compilado, no se edita a mano
 ```
 
 - **Física a paso fijo** (240 veces por segundo). El juego se comporta igual en una compu lenta que en una rápida, y el mismo intento siempre da el mismo resultado.
+- **Movimiento suave en cualquier monitor.** El dibujo va entre el paso de física anterior y el actual, así la cámara avanza parejo en pantallas de 60, 120 o 144 Hz aunque a un cuadro le toquen 3 pasos y al siguiente 5.
+- **Tipos para todo.** Cada objeto del nivel es un tipo distinto, entonces el compilador avisa si un portal se usa como bloque o si un orbe trae un color que no existe.
 - **Niveles por beats.** Cada obstáculo se pone en un tiempo de la canción y el motor lo convierte en posición según la velocidad. Si un portal cambia la velocidad, lo que viene después se sigue acomodando al ritmo.
 - **La música se arma en vivo**: bombo, caja, hi-hat, bajo, arpegio y acordes. Cada canción tiene su escala, sus acordes y partes más intensas donde el nivel se pone difícil.
 - **Hitbox justo.** Los picos tienen una caja más chica que su dibujo y los bloques solo matan si te metes de lado. Si caes encima, aterrizas.
@@ -82,7 +86,16 @@ js/juego.js      dibujo, controles, menús y modo práctica
 
 ## Correrlo en tu compu
 
-Descarga el repo y abre `index.html`. No necesita instalar nada.
+Para jugar, descarga el repo y abre `index.html`. No necesita instalar nada porque `js/` ya viene compilado.
+
+Para modificarlo necesitas [Node.js](https://nodejs.org):
+
+```
+npm install
+npm run watch
+```
+
+`watch` recompila cada vez que guardas un archivo de `src/`. Con `npm run check` solo revisa los tipos sin generar nada.
 
 ## Licencia
 
