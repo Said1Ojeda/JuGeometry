@@ -1,7 +1,8 @@
+"use strict";
 // fisica del juego, sin nada de dibujo para poder probar los niveles con un bot
 // unidades en bloques, y hacia arriba, el suelo esta en y = 0
 const Motor = (() => {
-    const BASE = 10.4;          // bloques por segundo a velocidad normal
+    const BASE = 10.4; // bloques por segundo a velocidad normal
     const TECHO = 11;
     const G_CUBO = 105;
     const SALTO = 21.5;
@@ -9,12 +10,10 @@ const Motor = (() => {
     const G_BOLA = 88;
     const NAVE_ACC = 52;
     const NAVE_MAX = 10.5;
-    const BUFFER = 0.12;        // cuanto dura un toque para los orbes y la bola
+    const BUFFER = 0.12; // cuanto dura un toque para los orbes y la bola
     const PASO = 1 / 240;
-
     const ORBE = { amarillo: 1, rosa: 0.72 };
     const PAD = { amarillo: 1.42, rosa: 1.02 };
-
     function estadoInicial(nivel) {
         return {
             x: 0, y: 0, vy: 0,
@@ -32,27 +31,24 @@ const Motor = (() => {
             evento: null
         };
     }
-
     function clonar(s) {
         const c = Object.assign({}, s);
         c.usados = s.usados.slice();
         return c;
     }
-
     function choca(ax, ay, aw, ah, bx, by, bw, bh) {
         return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
     }
-
     // avanza un pasito fijo de fisica
     function paso(s, nivel, mantener, dt) {
-        if (s.muerto || s.ganado) return;
+        if (s.muerto || s.ganado)
+            return;
         s.evento = null;
         const vel = BASE * s.mult;
         s.x += vel * dt;
-        if (s.buffer > 0) s.buffer -= dt;
-
+        if (s.buffer > 0)
+            s.buffer -= dt;
         const g = s.grav;
-
         if (s.modo === 'cubo') {
             // si tocaste un poquito antes de caer tambien salta, si no se siente que no agarro el toque
             if (s.enSuelo && (mantener || s.buffer > 0)) {
@@ -62,52 +58,67 @@ const Motor = (() => {
                 s.saltos++;
             }
             s.vy -= g * G_CUBO * dt;
-            if (s.vy * g < -CAIDA_MAX) s.vy = -g * CAIDA_MAX;
-        } else if (s.modo === 'bola') {
+            if (s.vy * g < -CAIDA_MAX)
+                s.vy = -g * CAIDA_MAX;
+        }
+        else if (s.modo === 'bola') {
             if (s.enSuelo && s.buffer > 0) {
-                s.grav = -s.grav;
+                s.grav = voltear(s.grav);
                 s.vy = -s.grav * 6;
                 s.buffer = 0;
                 s.enSuelo = false;
                 s.saltos++;
-            } else {
-                s.vy -= g * G_BOLA * dt;
-                if (s.vy * g < -CAIDA_MAX) s.vy = -g * CAIDA_MAX;
             }
-        } else if (s.modo === 'nave') {
+            else {
+                s.vy -= g * G_BOLA * dt;
+                if (s.vy * g < -CAIDA_MAX)
+                    s.vy = -g * CAIDA_MAX;
+            }
+        }
+        else if (s.modo === 'nave') {
             s.vy += (mantener ? 1 : -0.9) * g * NAVE_ACC * dt;
-            if (s.vy > NAVE_MAX) s.vy = NAVE_MAX;
-            if (s.vy < -NAVE_MAX) s.vy = -NAVE_MAX;
-        } else if (s.modo === 'onda') {
+            if (s.vy > NAVE_MAX)
+                s.vy = NAVE_MAX;
+            if (s.vy < -NAVE_MAX)
+                s.vy = -NAVE_MAX;
+        }
+        else if (s.modo === 'onda') {
             s.vy = (mantener ? 1 : -1) * g * vel;
         }
-
         s.y += s.vy * dt;
         s.enSuelo = false;
-
         // suelo y techo
         if (s.y < 0) {
             s.y = 0;
-            if (s.vy < 0) s.vy = 0;
-            if (s.grav === 1) s.enSuelo = true;
+            if (s.vy < 0)
+                s.vy = 0;
+            if (s.grav === 1)
+                s.enSuelo = true;
         }
         if (s.y + 1 > TECHO) {
             s.y = TECHO - 1;
-            if (s.vy > 0) s.vy = 0;
-            if (s.grav === -1) s.enSuelo = true;
+            if (s.vy > 0)
+                s.vy = 0;
+            if (s.grav === -1)
+                s.enSuelo = true;
         }
-
         const objs = nivel.objs;
-        while (s.i0 < objs.length && objs[s.i0].x2 < s.x - 1) s.i0++;
-
+        while (s.i0 < objs.length && objs[s.i0].x2 < s.x - 1)
+            s.i0++;
         for (let i = s.i0; i < objs.length; i++) {
             const o = objs[i];
-            if (o.x > s.x + 2) break;
-            if (s.usados[i] && o.unaVez) continue;
-
+            if (o.x > s.x + 2)
+                break;
+            if (s.usados[i] && o.unaVez)
+                continue;
             switch (o.t) {
-                case 'bloque': chocarBloque(s, o); break;
-                case 'pico': if (choca(s.x + .15, s.y + .15, .7, .7, o.hx, o.hy, o.hw, o.hh)) morir(s); break;
+                case 'bloque':
+                    chocarBloque(s, o);
+                    break;
+                case 'pico':
+                    if (choca(s.x + .15, s.y + .15, .7, .7, o.hx, o.hy, o.hw, o.hh))
+                        morir(s);
+                    break;
                 case 'orbe':
                     if (s.modo !== 'onda' && s.buffer > 0 && dist(s, o) < .95) {
                         s.usados[i] = 1;
@@ -135,56 +146,59 @@ const Motor = (() => {
                     }
                     break;
             }
-            if (s.muerto) return;
+            if (s.muerto)
+                return;
         }
-
-        if (s.x >= nivel.fin) s.ganado = true;
+        if (s.x >= nivel.fin)
+            s.ganado = true;
     }
-
     function dist(s, o) {
         const dx = s.x + .5 - (o.x + .5), dy = s.y + .5 - (o.y + .5);
         return Math.sqrt(dx * dx + dy * dy);
     }
-
     function morir(s) {
         s.muerto = true;
     }
-
     function chocarBloque(s, b) {
-        if (!choca(s.x, s.y, 1, 1, b.x, b.y, b.w, b.h)) return;
-
+        if (!choca(s.x, s.y, 1, 1, b.x, b.y, b.w, b.h))
+            return;
         // la onda muere con cualquier bloque, pero con hitbox chiquito
         if (s.modo === 'onda') {
-            if (choca(s.x + .32, s.y + .32, .36, .36, b.x, b.y, b.w, b.h)) morir(s);
+            if (choca(s.x + .32, s.y + .32, .36, .36, b.x, b.y, b.w, b.h))
+                morir(s);
             return;
         }
-
-        const arriba = b.y + b.h - s.y;     // cuanto se metio desde arriba
-        const abajo = s.y + 1 - b.y;        // cuanto se metio desde abajo
-
+        const arriba = b.y + b.h - s.y; // cuanto se metio desde arriba
+        const abajo = s.y + 1 - b.y; // cuanto se metio desde abajo
         if (arriba <= .45 && s.vy <= 0) {
             s.y = b.y + b.h;
             s.vy = 0;
-            if (s.grav === 1) s.enSuelo = true;
-            else if (s.modo !== 'nave') return morir(s);
+            if (s.grav === 1)
+                s.enSuelo = true;
+            else if (s.modo !== 'nave')
+                return morir(s);
             return;
         }
         if (abajo <= .45 && s.vy >= 0) {
             s.y = b.y - 1;
             s.vy = 0;
-            if (s.grav === -1) s.enSuelo = true;
-            else if (s.modo !== 'nave') return morir(s);
+            if (s.grav === -1)
+                s.enSuelo = true;
+            else if (s.modo !== 'nave')
+                return morir(s);
             return;
         }
         // de lado, solo cuenta si el centro ya se metio
-        if (choca(s.x + .3, s.y + .3, .4, .4, b.x, b.y, b.w, b.h)) morir(s);
+        if (choca(s.x + .3, s.y + .3, .4, .4, b.x, b.y, b.w, b.h))
+            morir(s);
     }
-
+    const voltear = (g) => (g === 1 ? -1 : 1);
     function usarOrbe(s, tipo) {
         if (tipo === 'azul') {
-            s.grav = -s.grav;
+            s.grav = voltear(s.grav);
             s.vy = -s.grav * 8;
-        } else {
+        }
+        else {
             const f = s.modo === 'nave' ? .55 : 1;
             s.vy = s.grav * SALTO * ORBE[tipo] * f;
         }
@@ -192,54 +206,54 @@ const Motor = (() => {
         s.saltos++;
         s.evento = 'orbe';
     }
-
     function usarPad(s, tipo) {
         if (tipo === 'azul') {
-            s.grav = -s.grav;
+            s.grav = voltear(s.grav);
             s.vy = -s.grav * 16;
-        } else {
+        }
+        else {
             const f = s.modo === 'nave' ? .6 : 1;
             s.vy = s.grav * SALTO * PAD[tipo] * f;
         }
         s.enSuelo = false;
         s.evento = 'pad';
     }
-
     function usarPortal(s, p) {
         if (p.tipo === 'modo') {
             if (s.modo !== p.valor) {
                 s.modo = p.valor;
-                if (p.valor === 'nave' || p.valor === 'onda') s.vy *= .4;
+                if (p.valor === 'nave' || p.valor === 'onda')
+                    s.vy *= .4;
                 s.evento = 'portal';
             }
-        } else if (p.tipo === 'grav') {
+        }
+        else if (p.tipo === 'grav') {
             if (s.grav !== p.valor) {
                 s.grav = p.valor;
                 s.vy *= .5;
                 s.enSuelo = false;
                 s.evento = 'portal';
             }
-        } else if (p.tipo === 'vel') {
+        }
+        else if (p.tipo === 'vel') {
             s.mult = p.valor;
         }
     }
-
     // ---------- armado de niveles ----------
     // los objetos se ponen por tiempo musical (beats), asi los obstaculos caen con el ritmo
-
     function Constructor(def) {
         const objs = [];
         const tramos = [{ beat: 0, x: 0, mult: 1 }];
         const colores = [];
         const bloquesPorBeat = (mult) => BASE * mult * 60 / def.bpm;
         let monedas = 0;
-
         const x = (beat) => {
             let t = tramos[0];
-            for (const tr of tramos) if (tr.beat <= beat) t = tr;
+            for (const tr of tramos)
+                if (tr.beat <= beat)
+                    t = tr;
             return t.x + (beat - t.beat) * bloquesPorBeat(t.mult);
         };
-
         const api = {
             x,
             vel(beat, mult) {
@@ -268,9 +282,11 @@ const Motor = (() => {
                 let k = 0;
                 for (let px = ini; px < fin; px += cada, k++) {
                     const piso = alturas[k % alturas.length];
-                    if (piso > 0) objs.push({ t: 'bloque', x: px, y: 0, w: cada, h: piso });
+                    if (piso > 0)
+                        objs.push({ t: 'bloque', x: px, y: 0, w: cada, h: piso });
                     const techo = piso + hueco;
-                    if (techo < TECHO) objs.push({ t: 'bloque', x: px, y: techo, w: cada, h: TECHO - techo });
+                    if (techo < TECHO)
+                        objs.push({ t: 'bloque', x: px, y: techo, w: cada, h: TECHO - techo });
                 }
             },
             terminar(beat) {
@@ -280,14 +296,17 @@ const Motor = (() => {
                 const tramosBeat = tramos.slice();
                 return {
                     ...def,
-                    objs,
+                    // aqui ya todos traen x2
+                    objs: objs,
                     colores,
                     fin: x(beat),
                     monedasTotal: monedas,
                     // para la musica, de posicion a tiempo
                     beatEn(px) {
                         let t = tramosBeat[0];
-                        for (const tr of tramosBeat) if (tr.x <= px) t = tr;
+                        for (const tr of tramosBeat)
+                            if (tr.x <= px)
+                                t = tr;
                         return t.beat + (px - t.x) / bloquesPorBeat(t.mult);
                     }
                 };
@@ -295,6 +314,5 @@ const Motor = (() => {
         };
         return api;
     }
-
     return { BASE, TECHO, PASO, BUFFER, estadoInicial, clonar, paso, Constructor };
 })();

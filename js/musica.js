@@ -1,13 +1,18 @@
+"use strict";
 // musica hecha en el momento con Web Audio, sin archivos mp3
 // cada cancion es un bpm, una escala, acordes y que tan intensa va en cada parte
 const Musica = (() => {
-    let ctx = null, maestro = null, corrida = null, timer = null;
+    // ctx y maestro existen hasta el primer toque, por eso se revisa listo antes de usarlos
+    let ctx;
+    let maestro;
+    let listo = false;
+    let corrida = null;
+    let timer = null;
     let volumen = 0.55, apagada = false;
-
     const CANCIONES = {
         arranque: {
             bpm: 120, raiz: 45, escala: [0, 2, 3, 5, 7, 8, 10],
-            acordes: [0, 5, 3, 6],         // i VI iv VII
+            acordes: [0, 5, 3, 6], // i VI iv VII
             arpegio: [0, 2, 4, 7, 4, 2, 0, 4],
             partes: [[0, 4, 1], [4, 20, 2], [20, 31, 3], [31, 45, 2], [45, 99, 3]]
         },
@@ -24,21 +29,26 @@ const Musica = (() => {
             partes: [[0, 4, 2], [4, 99, 3]]
         }
     };
-
     function asegurar() {
-        if (ctx) return ctx;
+        if (listo)
+            return true;
+        const Clase = window.AudioContext || window.webkitAudioContext;
+        if (!Clase)
+            return false;
         try {
-            ctx = new (window.AudioContext || window.webkitAudioContext)();
+            ctx = new Clase();
             maestro = ctx.createGain();
             maestro.gain.value = apagada ? 0 : volumen;
             const comp = ctx.createDynamicsCompressor();
             maestro.connect(comp).connect(ctx.destination);
-        } catch (e) { ctx = null; }
-        return ctx;
+            listo = true;
+        }
+        catch (e) {
+            listo = false;
+        }
+        return listo;
     }
-
     const freq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
-
     // nota de la escala, grado puede pasarse de 7 y sube de octava
     function nota(c, grado, octava = 0) {
         const n = c.escala.length;
@@ -46,16 +56,16 @@ const Musica = (() => {
         const g = ((grado % n) + n) % n;
         return c.raiz + c.escala[g] + 12 * (o + octava);
     }
-
     let ruidoBuf = null;
     function ruido() {
-        if (ruidoBuf) return ruidoBuf;
+        if (ruidoBuf)
+            return ruidoBuf;
         ruidoBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
         const d = ruidoBuf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        for (let i = 0; i < d.length; i++)
+            d[i] = Math.random() * 2 - 1;
         return ruidoBuf;
     }
-
     function bombo(salida, t) {
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.frequency.setValueAtTime(150, t);
@@ -63,9 +73,9 @@ const Musica = (() => {
         g.gain.setValueAtTime(.9, t);
         g.gain.exponentialRampToValueAtTime(.001, t + .28);
         o.connect(g).connect(salida);
-        o.start(t); o.stop(t + .3);
+        o.start(t);
+        o.stop(t + .3);
     }
-
     function golpe(salida, t, alto, largo, vol) {
         const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
         s.buffer = ruido();
@@ -74,9 +84,9 @@ const Musica = (() => {
         g.gain.setValueAtTime(vol, t);
         g.gain.exponentialRampToValueAtTime(.001, t + largo);
         s.connect(f).connect(g).connect(salida);
-        s.start(t); s.stop(t + largo + .02);
+        s.start(t);
+        s.stop(t + largo + .02);
     }
-
     function tono(salida, t, midi, dur, tipo, vol, corte) {
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = tipo;
@@ -94,14 +104,15 @@ const Musica = (() => {
         g.gain.linearRampToValueAtTime(vol, t + .008);
         g.gain.exponentialRampToValueAtTime(.001, t + dur);
         ultimo.connect(g).connect(salida);
-        o.start(t); o.stop(t + dur + .02);
+        o.start(t);
+        o.stop(t + dur + .02);
     }
-
     function intensidad(c, beat) {
-        for (const [a, b, n] of c.partes) if (beat >= a && beat < b) return n;
+        for (const [a, b, n] of c.partes)
+            if (beat >= a && beat < b)
+                return n;
         return 3;
     }
-
     // un dieciseisavo de la cancion
     function tocar(c, salida, i, t) {
         const beat = i / 4;
@@ -110,53 +121,53 @@ const Musica = (() => {
         const compas = Math.floor(beat / 4);
         const acorde = c.acordes[compas % c.acordes.length];
         const spb = 60 / c.bpm;
-
-        if (sub === 0) bombo(salida, t);
-        if (nivel >= 2 && sub === 0 && beat % 2 === 1) golpe(salida, t, 1200, .16, .35);
-        if (sub === 2 || (nivel >= 3 && sub % 2 === 1)) golpe(salida, t, 7000, .04, sub === 2 ? .12 : .06);
-
+        if (sub === 0)
+            bombo(salida, t);
+        if (nivel >= 2 && sub === 0 && beat % 2 === 1)
+            golpe(salida, t, 1200, .16, .35);
+        if (sub === 2 || (nivel >= 3 && sub % 2 === 1))
+            golpe(salida, t, 7000, .04, sub === 2 ? .12 : .06);
         // bajo en corcheas siguiendo el acorde
-        if (sub % 2 === 0) tono(salida, t, nota(c, acorde, -1) - 12 + (sub === 2 && nivel >= 3 ? 12 : 0), spb * .45, 'sawtooth', .16, 380);
-
+        if (sub % 2 === 0)
+            tono(salida, t, nota(c, acorde, -1) - 12 + (sub === 2 && nivel >= 3 ? 12 : 0), spb * .45, 'sawtooth', .16, 380);
         // arpegio
         if (nivel >= 2) {
             const paso = c.arpegio[i % c.arpegio.length];
             tono(salida, t, nota(c, acorde + paso, 1), spb * .22, 'square', nivel >= 3 ? .05 : .035, 2600);
         }
-
         // acorde largo al inicio de cada compas
         if (nivel >= 2 && beat % 4 === 0 && sub === 0) {
             [0, 2, 4].forEach(g => tono(salida, t, nota(c, acorde + g, 0), spb * 3.8, 'sawtooth', .025, 1400));
         }
     }
-
     function iniciar(nombre, desdeBeat = 0) {
         detener();
-        if (!asegurar() || !CANCIONES[nombre]) return;
-        if (ctx.state === 'suspended') ctx.resume();
-
+        if (!asegurar() || !CANCIONES[nombre])
+            return;
+        if (ctx.state === 'suspended')
+            ctx.resume();
         const c = CANCIONES[nombre];
         const spb = 60 / c.bpm;
         const salida = ctx.createGain();
         salida.connect(maestro);
         const inicio = ctx.currentTime + .06 - desdeBeat * spb;
         let i = Math.ceil(desdeBeat * 4);
-
         corrida = { c, salida, inicio, spb };
         const programar = () => {
             const hasta = ctx.currentTime + .15;
             while (inicio + i * spb / 4 < hasta) {
                 const t = inicio + i * spb / 4;
-                if (t >= ctx.currentTime - .01) tocar(c, salida, i, t);
+                if (t >= ctx.currentTime - .01)
+                    tocar(c, salida, i, t);
                 i++;
             }
         };
         programar();
-        timer = setInterval(programar, 25);
+        timer = window.setInterval(programar, 25);
     }
-
     function detener() {
-        if (timer) clearInterval(timer);
+        if (timer)
+            clearInterval(timer);
         timer = null;
         if (corrida) {
             const s = corrida.salida;
@@ -165,43 +176,47 @@ const Musica = (() => {
             corrida = null;
         }
     }
-
     // en que beat va la cancion, sirve para que el fondo lata con la musica
     function beatActual() {
-        if (!corrida) return null;
+        if (!corrida)
+            return null;
         return (ctx.currentTime - corrida.inicio) / corrida.spb;
     }
-
     function efecto(cual) {
-        if (!asegurar() || apagada) return;
+        if (!asegurar() || apagada)
+            return;
         const t = ctx.currentTime;
         try {
             if (cual === 'muerte') {
                 golpe(maestro, t, 200, .35, .8);
                 tono(maestro, t, 40, .3, 'square', .15, 600);
-            } else if (cual === 'moneda') {
+            }
+            else if (cual === 'moneda') {
                 tono(maestro, t, 88, .12, 'square', .08);
                 tono(maestro, t + .08, 95, .25, 'square', .08);
-            } else if (cual === 'checkpoint') {
+            }
+            else if (cual === 'checkpoint') {
                 tono(maestro, t, 84, .15, 'triangle', .1);
-            } else if (cual === 'ganar') {
+            }
+            else if (cual === 'ganar') {
                 [72, 76, 79, 84].forEach((m, k) => tono(maestro, t + k * .1, m, .5, 'square', .07));
-            } else if (cual === 'clic') {
+            }
+            else if (cual === 'clic') {
                 tono(maestro, t, 80, .05, 'triangle', .06);
             }
-        } catch (e) {}
+        }
+        catch (e) { }
     }
-
     function alternar() {
         apagada = !apagada;
-        if (asegurar()) maestro.gain.setTargetAtTime(apagada ? 0 : volumen, ctx.currentTime, .05);
+        if (asegurar())
+            maestro.gain.setTargetAtTime(apagada ? 0 : volumen, ctx.currentTime, .05);
         return !apagada;
     }
-
     function silencio(valor) {
         apagada = valor;
-        if (ctx) maestro.gain.value = apagada ? 0 : volumen;
+        if (listo)
+            maestro.gain.value = apagada ? 0 : volumen;
     }
-
     return { iniciar, detener, beatActual, efecto, alternar, silencio, asegurar, CANCIONES, estaApagada: () => apagada };
 })();
