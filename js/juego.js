@@ -516,8 +516,8 @@
         }
     }
     const COLOR_ORBE = { amarillo: '#ffe14d', rosa: '#ff5bd6', azul: '#3fd0ff' };
-    const FLECHAS = { 0.8: 1, 1: 2, 1.25: 3, 1.5: 4 };
-    const COLOR_VEL = { 0.8: '#ff8a3d', 1: '#3fd0ff', 1.25: '#5dff7a', 1.5: '#ff5bd6' };
+    const FLECHAS = { 0.8: 1, 1: 2, 1.25: 3, 1.5: 4, 2: 5 };
+    const COLOR_VEL = { 0.8: '#ff8a3d', 1: '#3fd0ff', 1.25: '#5dff7a', 1.5: '#ff5bd6', 2: '#ff3b3b' };
     const ICONO_PORTAL = { cubo: '■', nave: '▲', bola: '●', onda: '◆', ovni: '◓', '1': '▼', '-1': '▲' };
     const PORTAL = {
         cubo: '#5dff7a', nave: '#ff5bd6', bola: '#ff8a3d', onda: '#3ff5ff', ovni: '#b98bff',
