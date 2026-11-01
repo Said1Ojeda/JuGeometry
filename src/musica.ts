@@ -10,6 +10,7 @@ const Musica = (() => {
     let directo: AudioNode | null = null;
     let bomba: GainNode | null = null;
     let envioEco: GainNode | null = null;
+    let finPrevia = 0;
     let timer: number | null = null;
     let volumen = 0.55, apagada = false;
 
@@ -338,7 +339,29 @@ const Musica = (() => {
         filtro.connect(salida);
     }
 
+    // la parte que mas luce de cada cancion, el drop si tiene calma antes y si no la primera parte fuerte
+    function destacado(c: Cancion): number {
+        const k = c.partes.findIndex(p => p[2] === 0);
+        if (k >= 0 && c.partes[k + 1]) return c.partes[k + 1][0];
+        const fuerte = c.partes.find(p => p[2] === 3);
+        return fuerte ? fuerte[0] : 0;
+    }
+
+    // unos segundos de la cancion en el menu, entra y sale despacio
+    function previa(nombre: string) {
+        if (apagada || !CANCIONES[nombre]) return;
+        iniciar(nombre, destacado(CANCIONES[nombre]));
+        if (!corrida) return;
+        const g = corrida.salida.gain, t = ctx.currentTime;
+        g.setValueAtTime(0, t);
+        g.linearRampToValueAtTime(.6, t + .4);
+        g.setValueAtTime(.6, t + 6);
+        g.linearRampToValueAtTime(0, t + 7.5);
+        finPrevia = window.setTimeout(detener, 7600);
+    }
+
     function detener() {
+        clearTimeout(finPrevia);
         if (timer) clearInterval(timer);
         timer = null;
         if (corrida) {
@@ -389,5 +412,5 @@ const Musica = (() => {
         if (listo) maestro.gain.value = apagada ? 0 : volumen;
     }
 
-    return { iniciar, detener, beatActual, efecto, alternar, silencio, asegurar, CANCIONES, estaApagada: () => apagada };
+    return { iniciar, previa, detener, beatActual, efecto, alternar, silencio, asegurar, CANCIONES, estaApagada: () => apagada };
 })();

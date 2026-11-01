@@ -161,6 +161,8 @@
     }
     .tarjeta-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .tarjeta h2 { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; }
+    .oir { margin-left: auto; width: 30px; height: 30px; border: 1px solid var(--borde); border-radius: 50%; background: rgba(255, 255, 255, .06); color: #fff; font-size: .95rem; cursor: pointer; }
+    .oir:hover { background: rgba(255, 255, 255, .14); }
     .dificultad { font-size: .78rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
     .dificultad.arranque { background: rgba(93, 255, 122, .15); color: var(--verde); }
     .dificultad.pulso { background: rgba(63, 245, 255, .15); color: var(--cian); }
@@ -261,6 +263,7 @@
             <div class="tarjeta">
                 <div class="tarjeta-top">
                     <h2 id="tarjeta-nombre">Arranque</h2>
+                    <button class="oir" id="btn-oir" aria-label="Escuchar la canción del nivel" title="Escuchar la canción">♪</button>
                     <span class="dificultad" id="tarjeta-dificultad">Fácil</span>
                 </div>
                 <div class="meta">

@@ -806,6 +806,7 @@
         elegido = (elegido + d + Niveles.length) % Niveles.length;
         Musica.efecto('clic');
         pintarTarjeta();
+        Musica.previa(Niveles[elegido].cancion);
     }
 
     function pintarIconos() {
@@ -895,6 +896,7 @@
     clic('btn-practica', () => abrirNivel(elegido, true));
     clic('btn-ant', () => cambiarNivel(-1));
     clic('btn-sig', () => cambiarNivel(1));
+    clic('btn-oir', () => Musica.previa(Niveles[elegido].cancion));
     clic('btn-iconos', () => { pintarIconos(); mostrarCapa('capa-iconos'); });
     clic('btn-cerrar-iconos', () => { mostrarCapa('capa-menu'); });
     clic('btn-pausa', pausar);
