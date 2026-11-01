@@ -77,8 +77,10 @@ interface Cancion {
     escala: number[];
     acordes: number[];
     arpegio: number[];
-    // desde que beat, hasta que beat y que tan fuerte va
+    // desde que beat, hasta que beat y que tan fuerte va, el 0 es la calma antes de un drop
     partes: [number, number, number][];
+    // sin estilo es el electro de siempre
+    estilo?: 'dnb';
 }
 
 type Efecto = 'muerte' | 'moneda' | 'checkpoint' | 'ganar' | 'clic' | 'aleta';

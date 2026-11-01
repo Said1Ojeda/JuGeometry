@@ -27,6 +27,13 @@ const Musica = (() => {
             acordes: [0, 5, 2, 6],
             arpegio: [0, 7, 4, 9, 7, 11, 9, 4],
             partes: [[0, 4, 2], [4, 99, 3]]
+        },
+        // drum and bass en dorico, las partes siguen los tramos del nivel
+        eclipse: {
+            bpm: 170, raiz: 43, escala: [0, 2, 3, 5, 7, 9, 10], estilo: 'dnb',
+            acordes: [0, 3, 5, 4],
+            arpegio: [0, 4, 7, 9, 7, 4, 11, 9],
+            partes: [[0, 4, 1], [4, 30, 2], [30, 47, 3], [47, 61, 2], [61, 69, 0], [69, 96, 3], [96, 105, 2], [105, 117, 3], [117, 999, 1]]
         }
     };
     function asegurar() {
@@ -108,13 +115,127 @@ const Musica = (() => {
         o.stop(t + dur + .02);
     }
     function intensidad(c, beat) {
-        for (const [a, b, n] of c.partes)
-            if (beat >= a && beat < b)
-                return n;
-        return 3;
+        return parte(c, beat)[2];
+    }
+    function parte(c, beat) {
+        for (const p of c.partes)
+            if (beat >= p[0] && beat < p[1])
+                return p;
+        return [0, 999, 3];
+    }
+    // ruido que va subiendo de tono durante toda la calma, avisa que algo viene
+    function subida(salida, t, dur) {
+        const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        s.buffer = ruido();
+        s.loop = true;
+        f.type = 'bandpass';
+        f.Q.value = 3;
+        f.frequency.setValueAtTime(300, t);
+        f.frequency.exponentialRampToValueAtTime(7000, t + dur);
+        g.gain.setValueAtTime(.03, t);
+        g.gain.exponentialRampToValueAtTime(.22, t + dur);
+        s.connect(f).connect(g).connect(salida);
+        s.start(t);
+        s.stop(t + dur);
+    }
+    function platillo(salida, t) {
+        golpe(salida, t, 3500, 1.4, .5);
+        golpe(salida, t, 9000, .9, .25);
+    }
+    // bajo reese, dos sierras desafinadas con un filtro que respira
+    function reese(salida, t, midi, dur, vol) {
+        const f = ctx.createBiquadFilter(), g = ctx.createGain();
+        f.type = 'lowpass';
+        f.Q.value = 6;
+        f.frequency.setValueAtTime(220, t);
+        f.frequency.linearRampToValueAtTime(900, t + dur * .5);
+        f.frequency.linearRampToValueAtTime(260, t + dur);
+        g.gain.setValueAtTime(.0001, t);
+        g.gain.linearRampToValueAtTime(vol, t + .02);
+        g.gain.setValueAtTime(vol, t + dur * .85);
+        g.gain.exponentialRampToValueAtTime(.001, t + dur);
+        f.connect(g).connect(salida);
+        for (const desafine of [-9, 9]) {
+            const o = ctx.createOscillator();
+            o.type = 'sawtooth';
+            o.frequency.value = freq(midi);
+            o.detune.value = desafine;
+            o.connect(f);
+            o.start(t);
+            o.stop(t + dur + .02);
+        }
+    }
+    function caja(salida, t, vol) {
+        golpe(salida, t, 1800, .18, vol);
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(220, t);
+        o.frequency.exponentialRampToValueAtTime(140, t + .08);
+        g.gain.setValueAtTime(vol * .6, t);
+        g.gain.exponentialRampToValueAtTime(.001, t + .1);
+        o.connect(g).connect(salida);
+        o.start(t);
+        o.stop(t + .12);
+    }
+    // el ritmo de dos pasos del dnb, bombo en 1 y en el y de 3, caja en 2 y 4
+    function tocarDnb(c, salida, i, t) {
+        const beat = i / 4;
+        const nivel = intensidad(c, beat);
+        const en8 = i % 8;
+        const compas = Math.floor(beat / 4);
+        const acorde = c.acordes[compas % c.acordes.length];
+        const spb = 60 / c.bpm;
+        // la calma, se quita la bateria y el bajo y solo queda la subida con un redoble al final
+        const [desde, hasta] = parte(c, beat);
+        if (nivel === 0) {
+            if (beat === desde)
+                subida(salida, t, (hasta - desde) * spb);
+            const falta = hasta - beat;
+            if (falta <= 2)
+                caja(salida, t, .1 + (2 - falta) * .15);
+            else if (falta <= 4 && i % 2 === 0)
+                caja(salida, t, .1);
+        }
+        // el platillo cae justo en el drop
+        if (beat === desde && desde > 0 && intensidad(c, desde - .25) === 0)
+            platillo(salida, t);
+        if (nivel >= 1) {
+            if (i % 2 === 0)
+                golpe(salida, t, 8000, .03, en8 % 4 === 2 ? .1 : .05);
+            if (nivel >= 3 && i % 2 === 1)
+                golpe(salida, t, 9000, .02, .035);
+        }
+        if (nivel >= 2) {
+            if (i % 16 === 0 || i % 16 === 10)
+                bombo(salida, t);
+            if (en8 === 4)
+                caja(salida, t, .45);
+            // caja fantasma bajita, le da el swing
+            if (nivel >= 3 && i % 16 === 7)
+                caja(salida, t, .12);
+        }
+        // bajo, una nota larga cada dos beats siguiendo el acorde
+        if (nivel >= 2 && i % 8 === 0) {
+            const salto = i % 32 === 24 ? 2 : 0;
+            reese(salida, t, nota(c, acorde + salto, -1) - 12, spb * 2, nivel >= 3 ? .13 : .1);
+        }
+        // arpegio solo en las partes fuertes, una octava arriba en la segunda vuelta
+        if (nivel >= 3 && i % 2 === 0) {
+            const paso = c.arpegio[(i / 2) % c.arpegio.length];
+            const arriba = compas % 2 === 1 ? 1 : 0;
+            tono(salida, t, nota(c, acorde + paso, 1 + arriba), spb * .3, 'triangle', .07, 3200);
+        }
+        // colchon de acorde en cada compas, se oye desde la intro
+        // en la calma va cada dos beats y mas fuerte, si no se siente que se corto la musica
+        if (nivel === 0 ? i % 8 === 0 : i % 16 === 0) {
+            const vol = nivel === 0 ? .045 : nivel >= 2 ? .022 : .03;
+            [0, 2, 4].forEach(g => tono(salida, t, nota(c, acorde + g, 0), spb * (nivel === 0 ? 1.95 : 3.9), 'sawtooth', vol, 1100));
+        }
     }
     // un dieciseisavo de la cancion
     function tocar(c, salida, i, t) {
+        if (c.estilo === 'dnb')
+            return tocarDnb(c, salida, i, t);
         const beat = i / 4;
         const sub = i % 4;
         const nivel = intensidad(c, beat);
