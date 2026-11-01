@@ -22,7 +22,7 @@
     const COLORES = ['#ffe14d', '#3ff5ff', '#ff5bd6', '#5dff7a', '#ff8a3d', '#b98bff', '#ffffff', '#ff4f5e', '#2f7bff', '#1c1c28'];
     const CARAS = 6;
     const datos = (() => {
-        const d = { niveles: {}, icono: { c1: 0, c2: 1, cara: 0 }, saltos: 0, intentos: 0 };
+        const d = { niveles: {}, icono: { c1: 0, c2: 1, cara: 0 }, saltos: 0, intentos: 0, medallas: {} };
         try {
             Object.assign(d, JSON.parse(localStorage.getItem('jugeometry') || '{}'));
         }
@@ -136,7 +136,9 @@
             d.mejor = pct;
             aviso('¡Nuevo récord! ' + pct + '%');
         }
+        const nuevas = revisarMedallas();
         guardar();
+        avisarMedallas(nuevas, 1600);
     }
     function ganar() {
         ganadoDesde = performance.now();
@@ -148,19 +150,33 @@
             }, i * 180);
         const d = datosNivel(nivel.id);
         datos.saltos += s.saltos - saltosAntes;
+        const saltosNivel = s.saltos;
+        let recordSaltos = false;
         if (practica)
             d.practica = 100;
         else {
+            if (!d.completado) {
+                d.intentosAlPasar = d.intentos;
+                d.pasadoEl = new Date().toISOString().slice(0, 10);
+            }
+            else if (d.menosSaltos === undefined || saltosNivel < d.menosSaltos)
+                recordSaltos = true;
+            if (d.menosSaltos === undefined || saltosNivel < d.menosSaltos)
+                d.menosSaltos = saltosNivel;
             d.mejor = 100;
             d.completado = true;
             d.monedas |= s.monedas;
         }
+        const nuevas = revisarMedallas();
         guardar();
+        if (recordSaltos)
+            setTimeout(() => aviso('¡Récord! Lo pasaste con ' + saltosNivel + ' saltos'), 1500);
+        avisarMedallas(nuevas, recordSaltos ? 3200 : 1500);
         setTimeout(() => {
             $('fin-nivel').textContent = nivel.nombre;
             $('fin-modo').textContent = practica ? 'en modo práctica' : '';
             $('fin-intentos').textContent = practica ? '-' : String(intento);
-            $('fin-saltos').textContent = String(s.saltos);
+            $('fin-saltos').textContent = String(s.saltos) + (practica || d.menosSaltos === undefined ? '' : ' · récord ' + d.menosSaltos);
             $('fin-tiempo').textContent = tiempoIntento.toFixed(1) + ' s';
             $('fin-monedas').innerHTML = monedasHtml(practica ? 0 : s.monedas, nivel.monedasTotal);
             mostrarCapa('capa-ganar');
@@ -816,12 +832,63 @@
     const barraHud = $('barra-relleno');
     const pctTexto = $('pct');
     let avisoTimer = 0;
+    const pasado = (id) => !!datos.niveles[id]?.completado;
+    const MEDALLAS = [
+        { id: 'primera', icono: '🏁', nombre: 'Primera meta', como: 'Pasa cualquier nivel', ganada: () => Niveles.some(n => pasado(n.id)) },
+        { id: 'normal', icono: '🎵', nombre: 'Con ritmo', como: 'Pasa Pulso Neón', ganada: () => pasado('pulso') },
+        { id: 'dificil', icono: '🌊', nombre: 'Contra corriente', como: 'Pasa Corriente', ganada: () => pasado('corriente') },
+        { id: 'demonio', icono: '😈', nombre: 'Demonio', como: 'Pasa Eclipse', ganada: () => pasado('eclipse') },
+        { id: 'todos', icono: '👑', nombre: 'Rey del ritmo', como: 'Pasa todos los niveles', ganada: () => Niveles.every(n => pasado(n.id)) },
+        { id: 'monedas3', icono: '🪙', nombre: 'Buscador', como: 'Agarra las 3 monedas de un nivel', ganada: () => Niveles.some(n => todasLasMonedas(n)) },
+        { id: 'coleccion', icono: '💰', nombre: 'Colección completa', como: 'Todas las monedas de todos los niveles', ganada: () => Niveles.every(n => todasLasMonedas(n)) },
+        { id: 'primerIntento', icono: '⚡', nombre: 'A la primera', como: 'Pasa un nivel en tu primer intento', ganada: () => Object.values(datos.niveles).some(d => d.intentosAlPasar === 1) },
+        { id: 'practica', icono: '🧪', nombre: 'Ensayo', como: 'Llega al final en modo práctica', ganada: () => Object.values(datos.niveles).some(d => d.practica >= 100) },
+        { id: 'intentos100', icono: '💪', nombre: 'Terco', como: '100 intentos en total', ganada: () => datos.intentos >= 100 },
+        { id: 'saltos1000', icono: '🦘', nombre: 'Saltamontes', como: '1000 saltos en total', ganada: () => datos.saltos >= 1000 }
+    ];
+    function todasLasMonedas(n) {
+        const total = (1 << n.monedasTotal) - 1;
+        return (datosNivel(n.id).monedas & total) === total;
+    }
+    function revisarMedallas() {
+        if (!datos.medallas)
+            datos.medallas = {};
+        const nuevas = MEDALLAS.filter(m => !datos.medallas[m.id] && m.ganada());
+        for (const m of nuevas)
+            datos.medallas[m.id] = new Date().toISOString().slice(0, 10);
+        return nuevas;
+    }
+    // una por una, si salen juntas no da tiempo de leerlas
+    function avisarMedallas(lista, desde) {
+        lista.forEach((m, k) => setTimeout(() => {
+            aviso(m.icono + ' Medalla nueva: ' + m.nombre);
+            Musica.efecto('moneda');
+        }, desde + k * 1700));
+    }
+    function pintarMedallas() {
+        const ganadas = MEDALLAS.filter(m => datos.medallas?.[m.id]).length;
+        $('medallas-cuenta').textContent = ganadas + ' de ' + MEDALLAS.length;
+        $('medallas-lista').replaceChildren(...MEDALLAS.map(m => {
+            const ganada = !!datos.medallas?.[m.id];
+            const li = document.createElement('li');
+            li.className = 'medalla' + (ganada ? ' ganada' : '');
+            const icono = document.createElement('span');
+            icono.className = 'medalla-icono';
+            icono.textContent = ganada ? m.icono : '🔒';
+            const nombre = document.createElement('b');
+            nombre.textContent = m.nombre;
+            const como = document.createElement('small');
+            como.textContent = m.como;
+            li.append(icono, nombre, como);
+            return li;
+        }));
+    }
     function aviso(texto) {
         const a = $('aviso');
         a.textContent = texto;
         a.classList.add('visible');
         clearTimeout(avisoTimer);
-        avisoTimer = window.setTimeout(() => a.classList.remove('visible'), 1400);
+        avisoTimer = window.setTimeout(() => a.classList.remove('visible'), 1600);
     }
     function mostrarCapa(id) {
         document.querySelectorAll('.capa').forEach(c => c.classList.toggle('activa', c.id === id));
@@ -846,6 +913,9 @@
         $('barra-practica').style.width = d.practica + '%';
         $('txt-practica').textContent = d.practica + '%';
         $('tarjeta-intentos').textContent = d.intentos ? d.intentos + ' intentos' : 'Sin jugar todavía';
+        $('tarjeta-records').textContent = d.completado
+            ? 'Pasado en ' + d.intentosAlPasar + (d.intentosAlPasar === 1 ? ' intento' : ' intentos') + ' · récord de ' + d.menosSaltos + ' saltos'
+            : '';
         $('puntos-nivel').innerHTML = Niveles.map((_, i) => `<span class="${i === elegido ? 'activo' : ''}"></span>`).join('');
         nivel = n;
         camMenu = 0;
@@ -955,6 +1025,8 @@
     clic('btn-oir', () => Musica.previa(Niveles[elegido].cancion));
     clic('btn-iconos', () => { pintarIconos(); mostrarCapa('capa-iconos'); });
     clic('btn-cerrar-iconos', () => { mostrarCapa('capa-menu'); });
+    clic('btn-medallas', () => { pintarMedallas(); mostrarCapa('capa-medallas'); });
+    clic('btn-cerrar-medallas', () => { mostrarCapa('capa-menu'); });
     clic('btn-pausa', pausar);
     clic('btn-seguir', seguir);
     clic('btn-reiniciar', () => { if (!practica)
