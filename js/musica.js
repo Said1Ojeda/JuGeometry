@@ -7,6 +7,10 @@ const Musica = (() => {
     let maestro;
     let listo = false;
     let corrida = null;
+    // el bombo va directo y lo demas pasa por bomba, que se agacha en cada golpe de bombo
+    let directo = null;
+    let bomba = null;
+    let envioEco = null;
     let timer = null;
     let volumen = 0.55, apagada = false;
     const CANCIONES = {
@@ -74,6 +78,12 @@ const Musica = (() => {
         return ruidoBuf;
     }
     function bombo(salida, t) {
+        // el bombeo, todo lo demas baja un momento y regresa, por eso suena gordo
+        if (bomba && directo) {
+            salida = directo;
+            bomba.gain.setValueAtTime(.5, t);
+            bomba.gain.linearRampToValueAtTime(1, t + .22);
+        }
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.frequency.setValueAtTime(150, t);
         o.frequency.exponentialRampToValueAtTime(42, t + .12);
@@ -113,6 +123,20 @@ const Musica = (() => {
         ultimo.connect(g).connect(salida);
         o.start(t);
         o.stop(t + dur + .02);
+    }
+    function pad(salida, t, c, acorde, dur, vol) {
+        for (const g of [0, 2, 4]) {
+            const o = ctx.createOscillator(), e = ctx.createGain();
+            o.type = 'triangle';
+            o.frequency.value = freq(nota(c, acorde + g, 0));
+            o.detune.value = g === 2 ? 6 : -4;
+            e.gain.setValueAtTime(.0001, t);
+            e.gain.linearRampToValueAtTime(vol, t + dur * .3);
+            e.gain.linearRampToValueAtTime(.0001, t + dur);
+            o.connect(e).connect(salida);
+            o.start(t);
+            o.stop(t + dur + .02);
+        }
     }
     function intensidad(c, beat) {
         return parte(c, beat)[2];
@@ -165,8 +189,15 @@ const Musica = (() => {
             o.stop(t + dur + .02);
         }
     }
+    // manda una copia al eco, solo para la caja
+    function conEco(t, vol) {
+        if (envioEco)
+            golpe(envioEco, t, 1800, .12, vol);
+    }
     function caja(salida, t, vol) {
         golpe(salida, t, 1800, .18, vol);
+        if (vol > .2)
+            conEco(t, vol * .5);
         const o = ctx.createOscillator(), g = ctx.createGain();
         o.type = 'triangle';
         o.frequency.setValueAtTime(220, t);
@@ -244,8 +275,13 @@ const Musica = (() => {
         const spb = 60 / c.bpm;
         if (sub === 0)
             bombo(salida, t);
-        if (nivel >= 2 && sub === 0 && beat % 2 === 1)
+        if (nivel >= 2 && sub === 0 && beat % 2 === 1) {
             golpe(salida, t, 1200, .16, .35);
+            conEco(t, .18);
+        }
+        // pad suavecito de fondo, entra lento para que no se sienta el golpe
+        if (beat % 4 === 0 && sub === 0)
+            pad(salida, t, c, acorde, spb * 4, nivel >= 2 ? .018 : .028);
         if (sub === 2 || (nivel >= 3 && sub % 2 === 1))
             golpe(salida, t, 7000, .04, sub === 2 ? .12 : .06);
         // bajo en corcheas siguiendo el acorde
@@ -271,6 +307,8 @@ const Musica = (() => {
         const spb = 60 / c.bpm;
         const salida = ctx.createGain();
         salida.connect(maestro);
+        armarBuses(salida, spb);
+        const bus = bomba;
         const inicio = ctx.currentTime + .06 - desdeBeat * spb;
         let i = Math.ceil(desdeBeat * 4);
         corrida = { c, salida, inicio, spb };
@@ -279,12 +317,29 @@ const Musica = (() => {
             while (inicio + i * spb / 4 < hasta) {
                 const t = inicio + i * spb / 4;
                 if (t >= ctx.currentTime - .01)
-                    tocar(c, salida, i, t);
+                    tocar(c, bus, i, t);
                 i++;
             }
         };
         programar();
         timer = window.setInterval(programar, 25);
+    }
+    // eco a tres corcheas del tempo, con algo de vuelta y sin agudos para que no ensucie
+    function armarBuses(salida, spb) {
+        directo = salida;
+        bomba = ctx.createGain();
+        bomba.connect(salida);
+        envioEco = ctx.createGain();
+        envioEco.gain.value = .8;
+        const eco = ctx.createDelay(1);
+        eco.delayTime.value = Math.min(.95, spb * .75);
+        const vuelta = ctx.createGain();
+        vuelta.gain.value = .32;
+        const filtro = ctx.createBiquadFilter();
+        filtro.type = 'lowpass';
+        filtro.frequency.value = 2800;
+        envioEco.connect(eco).connect(filtro).connect(vuelta).connect(eco);
+        filtro.connect(salida);
     }
     function detener() {
         if (timer)
