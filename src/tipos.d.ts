@@ -81,7 +81,7 @@ interface Cancion {
     partes: [number, number, number][];
 }
 
-type Efecto = 'muerte' | 'moneda' | 'checkpoint' | 'ganar' | 'clic';
+type Efecto = 'muerte' | 'moneda' | 'checkpoint' | 'ganar' | 'clic' | 'aleta';
 
 // safari viejito todavia lo trae con otro nombre
 interface Window {

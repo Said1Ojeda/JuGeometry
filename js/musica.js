@@ -201,6 +201,10 @@ const Musica = (() => {
             else if (cual === 'ganar') {
                 [72, 76, 79, 84].forEach((m, k) => tono(maestro, t + k * .1, m, .5, 'square', .07));
             }
+            else if (cual === 'aleta') {
+                // bajito, si suena fuerte tapa la cancion porque se toca seguido
+                tono(maestro, t, 76, .07, 'triangle', .035);
+            }
             else if (cual === 'clic') {
                 tono(maestro, t, 80, .05, 'triangle', .06);
             }

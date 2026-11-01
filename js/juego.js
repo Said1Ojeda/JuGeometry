@@ -216,6 +216,7 @@
             return;
         tiempoIntento += dt;
         acumulado += dt;
+        const saltosCuadro = s.saltos;
         while (acumulado >= Motor.PASO) {
             acumulado -= Motor.PASO;
             antX = s.x;
@@ -266,6 +267,13 @@
         }
         else
             rot = s.vy > 0 ? -45 : 45;
+        // cada aletazo del ovni suelta chispas para el lado contrario de la gravedad
+        if (s.modo === 'ovni' && s.saltos > saltosCuadro) {
+            Musica.efecto('aleta');
+            const abajo = s.grav > 0 ? s.y + .15 : s.y + .85;
+            for (let k = 0; k < 7; k++)
+                particulas.push({ x: s.x + .2 + Math.random() * .6, y: abajo, vx: -1 - Math.random() * 2, vy: -s.grav * (2 + Math.random() * 3), vida: .35, color: colorJugador(1), r: .06 + Math.random() * .05 });
+        }
         estela.push({ x: verX + .5, y: verY + .5 });
         if (estela.length > 60)
             estela.shift();
