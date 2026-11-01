@@ -10,6 +10,10 @@ const Motor = (() => {
     const G_BOLA = 88;
     const NAVE_ACC = 52;
     const NAVE_MAX = 10.5;
+    // el ovni cae como cubo pero mas suave y cada toque es un aletazo
+    const G_OVNI = 62;
+    const OVNI_SALTO = 13.5;
+    const CAIDA_OVNI = 15;
     const BUFFER = 0.12; // cuanto dura un toque para los orbes y la bola
     const PASO = 1 / 240;
     const ORBE = { amarillo: 1, rosa: 0.72 };
@@ -85,6 +89,18 @@ const Motor = (() => {
         else if (s.modo === 'onda') {
             s.vy = (mantener ? 1 : -1) * g * vel;
         }
+        else if (s.modo === 'ovni') {
+            // solo el toque nuevo cuenta, mantener presionado no lo sube
+            if (s.buffer > 0) {
+                s.buffer = 0;
+                s.vy = g * OVNI_SALTO;
+                s.enSuelo = false;
+                s.saltos++;
+            }
+            s.vy -= g * G_OVNI * dt;
+            if (s.vy * g < -CAIDA_OVNI)
+                s.vy = -g * CAIDA_OVNI;
+        }
         s.y += s.vy * dt;
         s.enSuelo = false;
         // suelo y techo
@@ -159,6 +175,8 @@ const Motor = (() => {
     function morir(s) {
         s.muerto = true;
     }
+    // la nave y el ovni pueden pegar con la cabeza en un bloque sin morir
+    const vuela = (s) => s.modo === 'nave' || s.modo === 'ovni';
     function chocarBloque(s, b) {
         if (!choca(s.x, s.y, 1, 1, b.x, b.y, b.w, b.h))
             return;
@@ -175,7 +193,7 @@ const Motor = (() => {
             s.vy = 0;
             if (s.grav === 1)
                 s.enSuelo = true;
-            else if (s.modo !== 'nave')
+            else if (!vuela(s))
                 return morir(s);
             return;
         }
@@ -184,7 +202,7 @@ const Motor = (() => {
             s.vy = 0;
             if (s.grav === -1)
                 s.enSuelo = true;
-            else if (s.modo !== 'nave')
+            else if (!vuela(s))
                 return morir(s);
             return;
         }
@@ -222,7 +240,7 @@ const Motor = (() => {
         if (p.tipo === 'modo') {
             if (s.modo !== p.valor) {
                 s.modo = p.valor;
-                if (p.valor === 'nave' || p.valor === 'onda')
+                if (p.valor === 'nave' || p.valor === 'onda' || p.valor === 'ovni')
                     s.vy *= .4;
                 s.evento = 'portal';
             }
