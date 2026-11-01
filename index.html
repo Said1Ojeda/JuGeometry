@@ -161,6 +161,8 @@
     }
     .tarjeta-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .tarjeta h2 { margin: 0; font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; }
+    .records { margin: 0 0 8px; font-size: .8rem; color: #ffd84d; }
+    .records:empty { display: none; }
     .oir { margin-left: auto; width: 30px; height: 30px; border: 1px solid var(--borde); border-radius: 50%; background: rgba(255, 255, 255, .06); color: #fff; font-size: .95rem; cursor: pointer; }
     .oir:hover { background: rgba(255, 255, 255, .14); }
     .dificultad { font-size: .78rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
@@ -271,6 +273,7 @@
                     <span id="tarjeta-monedas"></span>
                     <span id="tarjeta-intentos"></span>
                 </div>
+                <p class="records" id="tarjeta-records"></p>
                 <div class="progreso"><span>Normal</span><div class="barra"><div id="barra-normal"></div></div><b id="txt-normal">0%</b></div>
                 <div class="progreso"><span>Práctica</span><div class="barra"><div id="barra-practica"></div></div><b id="txt-practica">0%</b></div>
             </div>

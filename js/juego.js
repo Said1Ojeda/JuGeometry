@@ -148,19 +148,31 @@
             }, i * 180);
         const d = datosNivel(nivel.id);
         datos.saltos += s.saltos - saltosAntes;
+        const saltosNivel = s.saltos;
+        let recordSaltos = false;
         if (practica)
             d.practica = 100;
         else {
+            if (!d.completado) {
+                d.intentosAlPasar = d.intentos;
+                d.pasadoEl = new Date().toISOString().slice(0, 10);
+            }
+            else if (d.menosSaltos === undefined || saltosNivel < d.menosSaltos)
+                recordSaltos = true;
+            if (d.menosSaltos === undefined || saltosNivel < d.menosSaltos)
+                d.menosSaltos = saltosNivel;
             d.mejor = 100;
             d.completado = true;
             d.monedas |= s.monedas;
         }
         guardar();
+        if (recordSaltos)
+            setTimeout(() => aviso('¡Récord! Lo pasaste con ' + saltosNivel + ' saltos'), 1500);
         setTimeout(() => {
             $('fin-nivel').textContent = nivel.nombre;
             $('fin-modo').textContent = practica ? 'en modo práctica' : '';
             $('fin-intentos').textContent = practica ? '-' : String(intento);
-            $('fin-saltos').textContent = String(s.saltos);
+            $('fin-saltos').textContent = String(s.saltos) + (practica || d.menosSaltos === undefined ? '' : ' · récord ' + d.menosSaltos);
             $('fin-tiempo').textContent = tiempoIntento.toFixed(1) + ' s';
             $('fin-monedas').innerHTML = monedasHtml(practica ? 0 : s.monedas, nivel.monedasTotal);
             mostrarCapa('capa-ganar');
@@ -846,6 +858,9 @@
         $('barra-practica').style.width = d.practica + '%';
         $('txt-practica').textContent = d.practica + '%';
         $('tarjeta-intentos').textContent = d.intentos ? d.intentos + ' intentos' : 'Sin jugar todavía';
+        $('tarjeta-records').textContent = d.completado
+            ? 'Pasado en ' + d.intentosAlPasar + (d.intentosAlPasar === 1 ? ' intento' : ' intentos') + ' · récord de ' + d.menosSaltos + ' saltos'
+            : '';
         $('puntos-nivel').innerHTML = Niveles.map((_, i) => `<span class="${i === elegido ? 'activo' : ''}"></span>`).join('');
         nivel = n;
         camMenu = 0;
