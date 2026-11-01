@@ -496,8 +496,8 @@
     }
 
     const COLOR_ORBE: Record<TipoOrbe, string> = { amarillo: '#ffe14d', rosa: '#ff5bd6', azul: '#3fd0ff' };
-    const FLECHAS: Record<number, number> = { 0.8: 1, 1: 2, 1.25: 3, 1.5: 4 };
-    const COLOR_VEL: Record<number, string> = { 0.8: '#ff8a3d', 1: '#3fd0ff', 1.25: '#5dff7a', 1.5: '#ff5bd6' };
+    const FLECHAS: Record<number, number> = { 0.8: 1, 1: 2, 1.25: 3, 1.5: 4, 2: 5 };
+    const COLOR_VEL: Record<number, string> = { 0.8: '#ff8a3d', 1: '#3fd0ff', 1.25: '#5dff7a', 1.5: '#ff5bd6', 2: '#ff3b3b' };
     const ICONO_PORTAL: Record<string, string> = { cubo: '■', nave: '▲', bola: '●', onda: '◆', ovni: '◓', '1': '▼', '-1': '▲' };
 
     const PORTAL: Record<string, string> = {

@@ -177,5 +177,107 @@ const Niveles = (() => {
         n.pico(62.5, 0, 0, 2);
         return n.terminar(66);
     }
-    return [arranque(), pulso(), corriente()];
+    // el mas largo, usa todos los modos y la velocidad doble
+    function eclipse() {
+        const n = Motor.Constructor({
+            id: 'eclipse', nombre: 'Eclipse', dificultad: 'Demonio', estrellas: 10,
+            bpm: 170, cancion: 'eclipse'
+        });
+        n.color(0, '#140a24', '#ffb347');
+        // entrada en cubo, picos al ritmo
+        n.pico(4);
+        n.pico(5);
+        n.pico(6.5, 0, 0, 3);
+        n.bloque(8, 0, 0, 3, 1);
+        n.pico(8, 3, 0, 2);
+        n.bloque(8, 5, 0, 3, 2);
+        n.pico(8, 8, 0, 3);
+        n.pico(11.5, 0, 0, 5);
+        n.orbe(11.5, 1.2, 2);
+        n.pico(13.5);
+        n.pad(14.5, 0, 0);
+        n.bloque(14.5, 3.5, 0, 4, 3);
+        n.moneda(14.5, 5.5, 5.6);
+        n.pico(17.5, 0, 0, 2);
+        // ovni entre columnas
+        n.color(18.5, '#1c0f3a', '#b98bff');
+        n.modo(19, 'ovni');
+        n.tunel(19.6, 30, [0, 0, 1, 1, 2, 2, 3, 3, 2, 2, 1, 1, 0, 0, 1, 2, 3, 4, 4, 3, 2, 1, 1, 1, 2, 3, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 4.6, 1);
+        n.moneda(25, 0, 6);
+        n.modo(30.5, 'cubo');
+        // nave con la gravedad volteada a medio tunel
+        n.color(31, '#3a0a12', '#ff4f5e');
+        n.pico(31.8, 0, 0, 2);
+        n.modo(33, 'nave');
+        n.tunel(33.6, 39, [0, 1, 2, 3, 3, 3, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0, 0, 0, 0], 5, 1);
+        n.grav(39.3, -1, 4);
+        n.tunel(40, 45.5, [0, 0, 1, 2, 3, 4, 4, 3, 2, 1, 1, 2, 3, 3, 2, 1, 0, 0, 0, 0], 5, 1);
+        n.grav(46, 1, 4);
+        n.modo(47, 'cubo');
+        // bola mas rapida, piso y techo
+        n.color(48, '#0a3a4a', '#3ff5ff');
+        n.vel(48, 1.25);
+        n.modo(48.5, 'bola');
+        n.pico(50, 0, 0, 2);
+        n.pico(51.2, 0, 10, 2, true);
+        n.pico(52.4, 0, 0, 2);
+        n.pico(53.6, 0, 10, 2, true);
+        n.pico(54.8, 0, 0, 3);
+        n.pico(56, 0, 10, 3, true);
+        n.modo(57.5, 'cubo');
+        n.grav(57.5, 1);
+        // onda a toda velocidad antes del drop
+        n.color(58, '#3a0a12', '#ff4f5e');
+        n.vel(58.5, 1.5);
+        n.modo(59, 'onda');
+        n.grav(59, 1);
+        n.tunel(59.6, 69, [3, 3, 4, 5, 6, 6, 5, 4, 3, 2, 2, 3, 4, 5, 5, 4, 3, 2, 1, 1, 2, 3, 4, 4, 3, 2, 2, 2, 2, 2], 4.2, 1.4);
+        // el drop, cubo al doble de rapido
+        n.color(69.5, '#140a24', '#ffb347');
+        n.modo(69.5, 'cubo');
+        n.vel(69.5, 2);
+        n.pico(71.5);
+        n.pico(73, 0, 0, 2);
+        n.bloque(74.5, 0, 0, 4, 1);
+        n.pico(74.5, 4, 0, 2);
+        n.bloque(74.5, 6, 0, 4, 2);
+        n.pico(76.5, 0, 0, 6);
+        n.orbe(76.5, 2.5, 2.4);
+        n.pico(78.5, 0, 0, 2);
+        n.pad(80, 0, 0);
+        n.pico(80, 2, 0, 8);
+        n.moneda(80, 5, 5.2);
+        // ovni con la gravedad al reves
+        n.color(81.5, '#1c0f3a', '#b98bff');
+        n.vel(82, 1.25);
+        n.modo(82.5, 'ovni');
+        n.tunel(83.2, 89, [0, 1, 2, 2, 3, 3, 2, 1, 1, 2, 3, 4, 4, 3, 2, 1, 0, 0, 0, 0, 0], 4.8, 1.2);
+        n.grav(89.4, -1, 4);
+        n.tunel(90, 95, [1, 1, 2, 3, 3, 2, 1, 1, 2, 3, 3, 3, 2, 1, 1, 1], 5, 1.2);
+        n.grav(95.4, 1, 4);
+        n.modo(96, 'cubo');
+        n.vel(96, 1);
+        // pad azul al techo y orbe azul para regresar
+        n.color(96.5, '#140a24', '#ffb347');
+        n.pico(98);
+        n.pad(99.5, 0, 0, 'azul');
+        n.pico(100.7, 0, 10, 2, true);
+        n.orbe(102.2, 0, 9.6, 'azul');
+        n.pico(102.2, -1, 0, 5);
+        n.pico(104);
+        // nave final a toda velocidad
+        n.color(105, '#3a0a12', '#ff4f5e');
+        n.vel(105.5, 1.5);
+        n.modo(106, 'nave');
+        n.grav(106, 1);
+        n.tunel(106.6, 116, [0, 1, 2, 3, 4, 4, 3, 2, 1, 1, 2, 3, 4, 5, 5, 4, 3, 2, 2, 2, 3, 4, 4, 3, 2, 1, 0, 0, 0, 0], 5, 1.3);
+        n.modo(116.5, 'cubo');
+        n.vel(116.5, 1);
+        // cierre tranquilo, ya se lo gano
+        n.color(117, '#140a24', '#ffb347');
+        n.pico(118.5);
+        n.pico(120, 0, 0, 2);
+        return n.terminar(124);
+    }
+    return [arranque(), pulso(), corriente(), eclipse()];
 })();
