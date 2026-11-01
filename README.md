@@ -23,6 +23,8 @@ Durante el nivel, los portales te van cambiando de modo. Cada uno se controla di
   <img src="docs/bola.jpg" width="49%" alt="Bola">
   <img src="docs/nave.jpg" width="49%" alt="Nave">
   <img src="docs/onda.jpg" width="49%" alt="Onda">
+  <img src="docs/ovni.jpg" width="49%" alt="OVNI">
+  <img src="docs/eclipse.jpg" width="49%" alt="Onda en el nivel Eclipse">
 </p>
 
 ## Lo que te encuentras en los niveles
@@ -30,7 +32,7 @@ Durante el nivel, los portales te van cambiando de modo. Cada uno se controla di
 - **Orbes**: se activan si tocas mientras pasas encima de ellos. El amarillo es un salto normal, el rosado un salto corto y el azul invierte la gravedad.
 - **Pads**: te lanzan solos al pisarlos. El azul te manda al techo.
 - **Portales de gravedad**: el azul es gravedad normal y el amarillo la invierte.
-- **Portales de velocidad**: las flechas dicen qué tan rápido vas, de 1 a 4.
+- **Portales de velocidad**: las flechas dicen qué tan rápido vas, de 1 a 5. Cinco flechas rojas es el doble de rápido.
 - **Monedas**: hay 3 escondidas por nivel. Solo se guardan si terminas el nivel en modo normal.
 
 ## Niveles
@@ -40,6 +42,7 @@ Durante el nivel, los portales te van cambiando de modo. Cada uno se controla di
 | **Arranque** | Fácil | 120 | Cubo, pads, orbes y una parte de nave tranquila |
 | **Pulso Neón** | Normal | 140 | Gravedad invertida, bola, orbes azules y nave más rápida |
 | **Corriente** | Difícil | 160 | Cambios de modo seguidos, onda a velocidad máxima y de todo un poco |
+| **Eclipse** | Demonio | 170 | El más largo. OVNI entre columnas, nave con la gravedad al revés a medio túnel, un drop al doble de velocidad y OVNI al revés |
 
 Los obstáculos están puestos sobre los tiempos de la canción, por eso los saltos caen con el ritmo.
 
@@ -83,7 +86,7 @@ js/                lo compilado, no se edita a mano
 - **La música se arma en vivo**: bombo, caja, hi-hat, bajo, arpegio y acordes. Cada canción tiene su escala, sus acordes y partes más intensas donde el nivel se pone difícil.
 - **Hitbox justo.** Los picos tienen una caja más chica que su dibujo y los bloques solo matan si te metes de lado. Si caes encima, aterrizas.
 - **Toques que no se pierden.** Si tocas un poquito antes de caer al suelo, el cubo salta en cuanto aterriza, sin tener que atinarle al momento exacto.
-- **Niveles revisados con un bot.** Busca todas las formas de pasar cada nivel y mide el margen de tiempo de cada salto. Se ajustaron los niveles hasta que ningún salto obligatorio tuviera un margen injusto: al menos 130 ms en Fácil, 105 en Normal y 80 en Difícil. También se confirmó que cada moneda se puede agarrar y que ningún nivel se pasa sin tocar nada o manteniendo todo el tiempo.
+- **Niveles revisados con un bot.** Busca todas las formas de pasar cada nivel y mide el margen de tiempo de cada salto. Se ajustaron los niveles hasta que ningún salto obligatorio tuviera un margen injusto: al menos 130 ms en Fácil, 105 en Normal, 80 en Difícil y 70 en Demonio. También se confirmó que cada moneda se puede agarrar y que ningún nivel se pasa sin tocar nada o manteniendo todo el tiempo.
 
 ## Correrlo en tu compu
 
