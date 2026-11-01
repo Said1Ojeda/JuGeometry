@@ -213,6 +213,14 @@
     .panel-top { display: flex; align-items: center; gap: 16px; }
     #vista-icono { width: 84px; height: 84px; }
     .colores, .caras { display: flex; flex-wrap: wrap; gap: 8px; }
+    .medalla-grande { font-size: 3rem; }
+    .medallas { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .medalla { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px; border: 1px solid var(--borde); border-radius: 14px; text-align: center; opacity: .5; }
+    .medalla.ganada { opacity: 1; border-color: rgba(255, 216, 77, .5); background: rgba(255, 216, 77, .08); }
+    .medalla-icono { font-size: 1.7rem; }
+    .medalla b { font-size: .85rem; }
+    .medalla small { font-size: .72rem; color: var(--tenue); line-height: 1.3; }
+    @media (max-width: 520px) { .medallas { grid-template-columns: 1fr 1fr; } }
     .color { width: 34px; height: 34px; border-radius: 10px; border: 2px solid rgba(0, 0, 0, .4); }
     .color.activo { outline: 3px solid #fff; outline-offset: 2px; }
     .cara { width: 58px; height: 58px; border-radius: 12px; border: 1px solid var(--borde); background: rgba(0, 0, 0, .35); padding: 4px; }
@@ -257,6 +265,7 @@
     <section class="capa" id="capa-menu">
         <div class="esquina">
             <button class="icono btn-sonido" aria-label="Sonido">🔊</button>
+            <button class="icono" id="btn-medallas" aria-label="Medallas">🏅</button>
             <button class="icono" id="btn-iconos" aria-label="Personalizar icono">🎨</button>
         </div>
         <h1 class="logo">JuGeometry</h1>
@@ -285,7 +294,7 @@
             <button class="boton verde" id="btn-practica">Práctica</button>
         </div>
         <p class="ayuda">
-            <kbd>Espacio</kbd>, <kbd>↑</kbd> o clic para saltar · mantén para la nave y la onda<br>
+            <kbd>Espacio</kbd>, <kbd>↑</kbd> o clic para saltar · mantén para la nave y la onda · toques seguidos para el ovni<br>
             <kbd>P</kbd> pausa · <kbd>R</kbd> reiniciar · en práctica <kbd>Z</kbd> pone checkpoint y <kbd>X</kbd> lo quita
         </p>
         <p class="girar">Se juega mejor con el cel de lado</p>
@@ -308,6 +317,22 @@
             <div class="caras" id="caras"></div>
             <div class="acciones" style="margin-top:18px">
                 <button class="boton" id="btn-cerrar-iconos">Listo</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="capa oscura" id="capa-medallas">
+        <div class="panel">
+            <div class="panel-top">
+                <span class="medalla-grande" aria-hidden="true">🏅</span>
+                <div>
+                    <h2 style="margin:0">Medallas</h2>
+                    <p class="ayuda" id="medallas-cuenta" style="text-align:left;margin:4px 0 0"></p>
+                </div>
+            </div>
+            <ul class="medallas" id="medallas-lista"></ul>
+            <div class="acciones" style="margin-top:18px">
+                <button class="boton" id="btn-cerrar-medallas">Listo</button>
             </div>
         </div>
     </section>

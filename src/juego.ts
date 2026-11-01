@@ -29,14 +29,14 @@
         mejor: number; practica: number; monedas: number; intentos: number; completado?: boolean;
         intentosAlPasar?: number; menosSaltos?: number; pasadoEl?: string;
     }
-    interface Datos { niveles: Record<string, DatosNivel>; icono: Icono; saltos: number; intentos: number; }
+    interface Datos { niveles: Record<string, DatosNivel>; icono: Icono; saltos: number; intentos: number; medallas: Record<string, string>; }
     interface Particula { x: number; y: number; vx: number; vy: number; vida: number; color: string; r: number; cuadro?: boolean; }
     interface Checkpoint { s: Estado; rot: number; }
     type Pantalla = 'menu' | 'jugando' | 'pausa' | 'ganado';
     type Rgb = number[];
 
     const datos: Datos = (() => {
-        const d: Datos = { niveles: {}, icono: { c1: 0, c2: 1, cara: 0 }, saltos: 0, intentos: 0 };
+        const d: Datos = { niveles: {}, icono: { c1: 0, c2: 1, cara: 0 }, saltos: 0, intentos: 0, medallas: {} };
         try { Object.assign(d, JSON.parse(localStorage.getItem('jugeometry') || '{}')); } catch (e) {}
         return d;
     })();
@@ -145,7 +145,9 @@
             d.mejor = pct;
             aviso('¡Nuevo récord! ' + pct + '%');
         }
+        const nuevas = revisarMedallas();
         guardar();
+        avisarMedallas(nuevas, 1600);
     }
 
     function ganar() {
@@ -171,8 +173,10 @@
             d.completado = true;
             d.monedas |= s.monedas;
         }
+        const nuevas = revisarMedallas();
         guardar();
         if (recordSaltos) setTimeout(() => aviso('¡Récord! Lo pasaste con ' + saltosNivel + ' saltos'), 1500);
+        avisarMedallas(nuevas, recordSaltos ? 3200 : 1500);
 
         setTimeout(() => {
             $('fin-nivel').textContent = nivel.nombre;
@@ -776,12 +780,70 @@
     const pctTexto = $('pct');
 
     let avisoTimer = 0;
+    // medallas, cada una ve los datos guardados y dice si ya se gano
+
+    interface Medalla { id: string; icono: string; nombre: string; como: string; ganada: () => boolean; }
+
+    const pasado = (id: string) => !!datos.niveles[id]?.completado;
+    const MEDALLAS: Medalla[] = [
+        { id: 'primera', icono: '🏁', nombre: 'Primera meta', como: 'Pasa cualquier nivel', ganada: () => Niveles.some(n => pasado(n.id)) },
+        { id: 'normal', icono: '🎵', nombre: 'Con ritmo', como: 'Pasa Pulso Neón', ganada: () => pasado('pulso') },
+        { id: 'dificil', icono: '🌊', nombre: 'Contra corriente', como: 'Pasa Corriente', ganada: () => pasado('corriente') },
+        { id: 'demonio', icono: '😈', nombre: 'Demonio', como: 'Pasa Eclipse', ganada: () => pasado('eclipse') },
+        { id: 'todos', icono: '👑', nombre: 'Rey del ritmo', como: 'Pasa todos los niveles', ganada: () => Niveles.every(n => pasado(n.id)) },
+        { id: 'monedas3', icono: '🪙', nombre: 'Buscador', como: 'Agarra las 3 monedas de un nivel', ganada: () => Niveles.some(n => todasLasMonedas(n)) },
+        { id: 'coleccion', icono: '💰', nombre: 'Colección completa', como: 'Todas las monedas de todos los niveles', ganada: () => Niveles.every(n => todasLasMonedas(n)) },
+        { id: 'primerIntento', icono: '⚡', nombre: 'A la primera', como: 'Pasa un nivel en tu primer intento', ganada: () => Object.values(datos.niveles).some(d => d.intentosAlPasar === 1) },
+        { id: 'practica', icono: '🧪', nombre: 'Ensayo', como: 'Llega al final en modo práctica', ganada: () => Object.values(datos.niveles).some(d => d.practica >= 100) },
+        { id: 'intentos100', icono: '💪', nombre: 'Terco', como: '100 intentos en total', ganada: () => datos.intentos >= 100 },
+        { id: 'saltos1000', icono: '🦘', nombre: 'Saltamontes', como: '1000 saltos en total', ganada: () => datos.saltos >= 1000 }
+    ];
+
+    function todasLasMonedas(n: Nivel): boolean {
+        const total = (1 << n.monedasTotal) - 1;
+        return (datosNivel(n.id).monedas & total) === total;
+    }
+
+    function revisarMedallas(): Medalla[] {
+        if (!datos.medallas) datos.medallas = {};
+        const nuevas = MEDALLAS.filter(m => !datos.medallas[m.id] && m.ganada());
+        for (const m of nuevas) datos.medallas[m.id] = new Date().toISOString().slice(0, 10);
+        return nuevas;
+    }
+
+    // una por una, si salen juntas no da tiempo de leerlas
+    function avisarMedallas(lista: Medalla[], desde: number) {
+        lista.forEach((m, k) => setTimeout(() => {
+            aviso(m.icono + ' Medalla nueva: ' + m.nombre);
+            Musica.efecto('moneda');
+        }, desde + k * 1700));
+    }
+
+    function pintarMedallas() {
+        const ganadas = MEDALLAS.filter(m => datos.medallas?.[m.id]).length;
+        $('medallas-cuenta').textContent = ganadas + ' de ' + MEDALLAS.length;
+        $('medallas-lista').replaceChildren(...MEDALLAS.map(m => {
+            const ganada = !!datos.medallas?.[m.id];
+            const li = document.createElement('li');
+            li.className = 'medalla' + (ganada ? ' ganada' : '');
+            const icono = document.createElement('span');
+            icono.className = 'medalla-icono';
+            icono.textContent = ganada ? m.icono : '🔒';
+            const nombre = document.createElement('b');
+            nombre.textContent = m.nombre;
+            const como = document.createElement('small');
+            como.textContent = m.como;
+            li.append(icono, nombre, como);
+            return li;
+        }));
+    }
+
     function aviso(texto: string) {
         const a = $('aviso');
         a.textContent = texto;
         a.classList.add('visible');
         clearTimeout(avisoTimer);
-        avisoTimer = window.setTimeout(() => a.classList.remove('visible'), 1400);
+        avisoTimer = window.setTimeout(() => a.classList.remove('visible'), 1600);
     }
 
     function mostrarCapa(id: string | null) {
@@ -914,6 +976,8 @@
     clic('btn-oir', () => Musica.previa(Niveles[elegido].cancion));
     clic('btn-iconos', () => { pintarIconos(); mostrarCapa('capa-iconos'); });
     clic('btn-cerrar-iconos', () => { mostrarCapa('capa-menu'); });
+    clic('btn-medallas', () => { pintarMedallas(); mostrarCapa('capa-medallas'); });
+    clic('btn-cerrar-medallas', () => { mostrarCapa('capa-menu'); });
     clic('btn-pausa', pausar);
     clic('btn-seguir', seguir);
     clic('btn-reiniciar', () => { if (!practica) checkpoints = []; empezar(practica); });

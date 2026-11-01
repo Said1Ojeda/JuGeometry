@@ -61,6 +61,12 @@ Los obstáculos están puestos sobre los tiempos de la canción, por eso los sal
 
 Pones checkpoints donde quieras y, al morir, apareces en el último en vez de volver al inicio. La música también arranca desde ese punto. Tu avance en práctica se guarda aparte del normal.
 
+## Récords y medallas
+
+Cada nivel guarda en cuántos intentos lo pasaste la primera vez y con cuántos saltos lo has pasado como mínimo. No se guarda el tiempo porque la pantalla avanza sola y siempre dura lo mismo, en cambio pasar un nivel con menos saltos sí tiene chiste.
+
+Con el botón 🏅 del menú ves las 11 medallas: pasar cada nivel, pasar uno en el primer intento, juntar las monedas, llegar al final en práctica, 100 intentos o 1000 saltos en total. Cuando ganas una aparece un aviso.
+
 ## Tu icono
 
 Desde el botón 🎨 del menú escoges el color principal, el secundario y la cara del cubo. Se guarda en el navegador, junto con tu mejor porcentaje, las monedas y los intentos de cada nivel.
@@ -83,7 +89,9 @@ js/                lo compilado, no se edita a mano
 - **Movimiento suave en cualquier monitor.** El dibujo va entre el paso de física anterior y el actual, así la cámara avanza parejo en pantallas de 60, 120 o 144 Hz aunque a un cuadro le toquen 3 pasos y al siguiente 5.
 - **Tipos para todo.** Cada objeto del nivel es un tipo distinto, entonces el compilador avisa si un portal se usa como bloque o si un orbe trae un color que no existe.
 - **Niveles por beats.** Cada obstáculo se pone en un tiempo de la canción y el motor lo convierte en posición según la velocidad. Si un portal cambia la velocidad, lo que viene después se sigue acomodando al ritmo.
-- **La música se arma en vivo**: bombo, caja, hi-hat, bajo, arpegio y acordes. Cada canción tiene su escala, sus acordes y partes más intensas donde el nivel se pone difícil.
+- **La música se arma en vivo**: bombo, caja, hi-hat, bajo, arpegio, acordes y pads. Cada canción tiene su escala, sus acordes y partes más intensas donde el nivel se pone difícil. Lo demás baja un momento en cada golpe de bombo para que suene con más cuerpo, y la caja lleva un eco a tiempo con la canción.
+- **Eclipse trae su propio estilo**, drum and bass a 170 BPM con bajo *reese*. Antes del drop la batería se quita, sube un barrido de ruido con redoble de caja y el platillo cae justo cuando el nivel arranca al doble de velocidad.
+- **Vista previa en el menú.** Al cambiar de nivel o tocar ♪ suenan unos segundos de la mejor parte de su canción.
 - **Hitbox justo.** Los picos tienen una caja más chica que su dibujo y los bloques solo matan si te metes de lado. Si caes encima, aterrizas.
 - **Toques que no se pierden.** Si tocas un poquito antes de caer al suelo, el cubo salta en cuanto aterriza, sin tener que atinarle al momento exacto.
 - **Niveles revisados con un bot.** Busca todas las formas de pasar cada nivel y mide el margen de tiempo de cada salto. Se ajustaron los niveles hasta que ningún salto obligatorio tuviera un margen injusto: al menos 130 ms en Fácil, 105 en Normal, 80 en Difícil y 70 en Demonio. También se confirmó que cada moneda se puede agarrar y que ningún nivel se pasa sin tocar nada o manteniendo todo el tiempo.
