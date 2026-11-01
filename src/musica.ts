@@ -33,7 +33,7 @@ const Musica = (() => {
             bpm: 170, raiz: 43, escala: [0, 2, 3, 5, 7, 9, 10], estilo: 'dnb',
             acordes: [0, 3, 5, 4],
             arpegio: [0, 4, 7, 9, 7, 4, 11, 9],
-            partes: [[0, 4, 1], [4, 30, 2], [30, 47, 3], [47, 69, 2], [69, 96, 3], [96, 105, 2], [105, 117, 3], [117, 999, 1]]
+            partes: [[0, 4, 1], [4, 30, 2], [30, 47, 3], [47, 61, 2], [61, 69, 0], [69, 96, 3], [96, 105, 2], [105, 117, 3], [117, 999, 1]]
         }
     };
 
@@ -113,8 +113,32 @@ const Musica = (() => {
     }
 
     function intensidad(c: Cancion, beat: number): number {
-        for (const [a, b, n] of c.partes) if (beat >= a && beat < b) return n;
-        return 3;
+        return parte(c, beat)[2];
+    }
+
+    function parte(c: Cancion, beat: number): [number, number, number] {
+        for (const p of c.partes) if (beat >= p[0] && beat < p[1]) return p;
+        return [0, 999, 3];
+    }
+
+    // ruido que va subiendo de tono durante toda la calma, avisa que algo viene
+    function subida(salida: AudioNode, t: number, dur: number) {
+        const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+        s.buffer = ruido();
+        s.loop = true;
+        f.type = 'bandpass';
+        f.Q.value = 3;
+        f.frequency.setValueAtTime(300, t);
+        f.frequency.exponentialRampToValueAtTime(7000, t + dur);
+        g.gain.setValueAtTime(.03, t);
+        g.gain.exponentialRampToValueAtTime(.22, t + dur);
+        s.connect(f).connect(g).connect(salida);
+        s.start(t); s.stop(t + dur);
+    }
+
+    function platillo(salida: AudioNode, t: number) {
+        golpe(salida, t, 3500, 1.4, .5);
+        golpe(salida, t, 9000, .9, .25);
     }
 
     // bajo reese, dos sierras desafinadas con un filtro que respira
@@ -161,6 +185,17 @@ const Musica = (() => {
         const acorde = c.acordes[compas % c.acordes.length];
         const spb = 60 / c.bpm;
 
+        // la calma, se quita la bateria y el bajo y solo queda la subida con un redoble al final
+        const [desde, hasta] = parte(c, beat);
+        if (nivel === 0) {
+            if (beat === desde) subida(salida, t, (hasta - desde) * spb);
+            const falta = hasta - beat;
+            if (falta <= 2) caja(salida, t, .1 + (2 - falta) * .15);
+            else if (falta <= 4 && i % 2 === 0) caja(salida, t, .1);
+        }
+        // el platillo cae justo en el drop
+        if (beat === desde && desde > 0 && intensidad(c, desde - .25) === 0) platillo(salida, t);
+
         if (nivel >= 1) {
             if (i % 2 === 0) golpe(salida, t, 8000, .03, en8 % 4 === 2 ? .1 : .05);
             if (nivel >= 3 && i % 2 === 1) golpe(salida, t, 9000, .02, .035);
@@ -186,8 +221,10 @@ const Musica = (() => {
         }
 
         // colchon de acorde en cada compas, se oye desde la intro
-        if (i % 16 === 0) {
-            [0, 2, 4].forEach(g => tono(salida, t, nota(c, acorde + g, 0), spb * 3.9, 'sawtooth', nivel >= 2 ? .022 : .03, 1100));
+        // en la calma va cada dos beats y mas fuerte, si no se siente que se corto la musica
+        if (nivel === 0 ? i % 8 === 0 : i % 16 === 0) {
+            const vol = nivel === 0 ? .045 : nivel >= 2 ? .022 : .03;
+            [0, 2, 4].forEach(g => tono(salida, t, nota(c, acorde + g, 0), spb * (nivel === 0 ? 1.95 : 3.9), 'sawtooth', vol, 1100));
         }
     }
 
