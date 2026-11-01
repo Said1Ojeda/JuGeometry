@@ -1,6 +1,6 @@
 // tipos que comparten todos los archivos del juego
 
-type Modo = 'cubo' | 'nave' | 'bola' | 'onda';
+type Modo = 'cubo' | 'nave' | 'bola' | 'onda' | 'ovni';
 type Gravedad = 1 | -1;
 type TipoOrbe = 'amarillo' | 'rosa' | 'azul';
 type Evento = 'moneda' | 'orbe' | 'pad' | 'portal' | null;
@@ -81,7 +81,7 @@ interface Cancion {
     partes: [number, number, number][];
 }
 
-type Efecto = 'muerte' | 'moneda' | 'checkpoint' | 'ganar' | 'clic';
+type Efecto = 'muerte' | 'moneda' | 'checkpoint' | 'ganar' | 'clic' | 'aleta';
 
 // safari viejito todavia lo trae con otro nombre
 interface Window {

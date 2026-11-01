@@ -16,6 +16,7 @@ Durante el nivel, los portales te van cambiando de modo. Cada uno se controla di
 | ▲ | **Nave** | Mantén para subir y suelta para bajar. |
 | ● | **Bola** | Cada toque invierte la gravedad, del suelo al techo y de regreso. |
 | ◆ | **Onda** | Mantén para subir en diagonal y suelta para bajar. Choca con cualquier bloque y pierdes. |
+| ◓ | **OVNI** | Cada toque es un aletazo hacia arriba. Mantener no sirve, hay que tocar a ritmo. |
 
 <p>
   <img src="docs/cubo.jpg" width="49%" alt="Cubo">

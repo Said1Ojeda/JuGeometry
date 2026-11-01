@@ -216,6 +216,7 @@
             return;
         tiempoIntento += dt;
         acumulado += dt;
+        const saltosCuadro = s.saltos;
         while (acumulado >= Motor.PASO) {
             acumulado -= Motor.PASO;
             antX = s.x;
@@ -260,8 +261,19 @@
         else if (s.modo === 'nave') {
             rot = -Math.atan2(s.vy, Motor.BASE * s.mult) * 180 / Math.PI * .8;
         }
+        else if (s.modo === 'ovni') {
+            // apenas se ladea, si gira mucho no se entiende para donde va
+            rot = Math.max(-18, Math.min(18, -s.vy * 1.4));
+        }
         else
             rot = s.vy > 0 ? -45 : 45;
+        // cada aletazo del ovni suelta chispas para el lado contrario de la gravedad
+        if (s.modo === 'ovni' && s.saltos > saltosCuadro) {
+            Musica.efecto('aleta');
+            const abajo = s.grav > 0 ? s.y + .15 : s.y + .85;
+            for (let k = 0; k < 7; k++)
+                particulas.push({ x: s.x + .2 + Math.random() * .6, y: abajo, vx: -1 - Math.random() * 2, vy: -s.grav * (2 + Math.random() * 3), vida: .35, color: colorJugador(1), r: .06 + Math.random() * .05 });
+        }
         estela.push({ x: verX + .5, y: verY + .5 });
         if (estela.length > 60)
             estela.shift();
@@ -506,9 +518,9 @@
     const COLOR_ORBE = { amarillo: '#ffe14d', rosa: '#ff5bd6', azul: '#3fd0ff' };
     const FLECHAS = { 0.8: 1, 1: 2, 1.25: 3, 1.5: 4 };
     const COLOR_VEL = { 0.8: '#ff8a3d', 1: '#3fd0ff', 1.25: '#5dff7a', 1.5: '#ff5bd6' };
-    const ICONO_PORTAL = { cubo: '■', nave: '▲', bola: '●', onda: '◆', '1': '▼', '-1': '▲' };
+    const ICONO_PORTAL = { cubo: '■', nave: '▲', bola: '●', onda: '◆', ovni: '◓', '1': '▼', '-1': '▲' };
     const PORTAL = {
-        cubo: '#5dff7a', nave: '#ff5bd6', bola: '#ff8a3d', onda: '#3ff5ff',
+        cubo: '#5dff7a', nave: '#ff5bd6', bola: '#ff8a3d', onda: '#3ff5ff', ovni: '#b98bff',
         '1': '#3fd0ff', '-1': '#ffe14d'
     };
     function dibujarPortal(o, x, t) {
@@ -622,6 +634,9 @@
             ctx.fillRect(-E * .35, E * .15, E * .55, E * .12);
             ctx.restore();
         }
+        else if (s.modo === 'ovni') {
+            dibujarOvni(x, y, rot, s.grav, icono);
+        }
         else if (s.modo === 'bola') {
             ctx.save();
             ctx.translate(x, y);
@@ -660,6 +675,41 @@
             ctx.stroke();
             ctx.restore();
         }
+    }
+    // platillo con cupula y el cubito adentro, como la nave pero redondo
+    function dibujarOvni(x, y, giro, grav, icono) {
+        const c1 = COLORES[icono.c1], c2 = COLORES[icono.c2];
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(giro * Math.PI / 180);
+        // se dibuja un poco mas grande que su caja, la caja de choque sigue siendo de 1
+        ctx.scale(1.2, grav < 0 ? -1.2 : 1.2);
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(0, -E * .06, E * .3, E * .32, 0, Math.PI, 0);
+        ctx.clip();
+        dibujarCubo(0, -E * .18, E * .36, 0, 1, icono);
+        ctx.restore();
+        ctx.beginPath();
+        ctx.ellipse(0, -E * .06, E * .3, E * .32, 0, Math.PI, 0);
+        ctx.fillStyle = 'rgba(180,240,255,.28)';
+        ctx.fill();
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = E * .05;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(0, E * .06, E * .55, E * .17, 0, 0, Math.PI * 2);
+        ctx.fillStyle = c1;
+        ctx.fill();
+        ctx.lineWidth = E * .06;
+        ctx.stroke();
+        ctx.fillStyle = c2;
+        for (let k = -2; k <= 2; k++) {
+            ctx.beginPath();
+            ctx.arc(k * E * .19, E * .08, E * .045, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
     // el cubo con su cara, se usa en el juego y en el menu de iconos
     function dibujarCubo(x, y, tam, giro, grav, icono, c = ctx) {
