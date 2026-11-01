@@ -79,6 +79,8 @@ interface Cancion {
     arpegio: number[];
     // desde que beat, hasta que beat y que tan fuerte va
     partes: [number, number, number][];
+    // sin estilo es el electro de siempre
+    estilo?: 'dnb';
 }
 
 type Efecto = 'muerte' | 'moneda' | 'checkpoint' | 'ganar' | 'clic' | 'aleta';
